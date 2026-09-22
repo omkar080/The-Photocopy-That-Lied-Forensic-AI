@@ -1,0 +1,69 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Reviews — Forensic AI{% endblock %}
+{% block page_title %}Human Review Queue{% endblock %}
+{% block page_subtitle %}Adjuster decisions and investigation notes{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3>⚖️ Recorded Reviews ({{ reviews|length }})</h3>
+  </div>
+
+  <div class="table-responsive">
+    <table class="forensic-table">
+      <thead>
+        <tr>
+          <th>Claim #</th>
+          <th>Claimant</th>
+          <th>Decision</th>
+          <th>Comments</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if reviews %}
+          {% for r in reviews %}
+          <tr>
+            <td>
+              <a href="/claims/{{ r.claim.id }}" class="claim-code">{{ r.claim.claim_number }}</a>
+            </td>
+            <td style="color: #fff; font-weight: 500;">{{ r.claim.claimant_name }}</td>
+            <td>
+              {% if r.decision == 'approved' %}
+                <span class="badge badge-verified">✅ Genuine</span>
+              {% elif r.decision == 'manual_audit_required' %}
+                <span class="badge badge-in_review">🔍 Needs Investigation</span>
+              {% else %}
+                <span class="badge badge-flagged">🚨 Suspected Tampering</span>
+              {% endif %}
+            </td>
+            <td style="max-width: 280px; color: var(--text-secondary); font-size: 12px; line-height: 1.4;">
+              {{ r.comments or 'No comments.' }}
+            </td>
+            <td style="white-space: nowrap;">{{ r.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+            <td>
+              <a href="/claims/{{ r.claim.id }}" class="btn btn-secondary btn-sm">Open</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <div class="empty-icon">⚖️</div>
+                <h4>No Reviews Logged Yet</h4>
+                <p>When claims are analyzed, human investigators can review and document verdicts.</p>
+                <div style="margin-top: 14px;">
+                  <a href="/claims" class="btn btn-secondary">View Claims</a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

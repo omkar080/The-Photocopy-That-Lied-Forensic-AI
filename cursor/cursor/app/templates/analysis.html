@@ -1,0 +1,296 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Claim {{ claim.claim_number }} — Analysis{% endblock %}
+{% block page_title %}Claim Examination{% endblock %}
+{% block page_subtitle %}{{ claim.claim_number }} — {{ claim.claimant_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header-actions">
+  <a href="/claims" class="btn btn-secondary">← Back</a>
+  {% if analysis %}
+    <a href="/claims/{{ claim.id }}/report" class="btn btn-secondary" target="_blank">📄 Report</a>
+  {% endif %}
+  <form action="/claims/{{ claim.id }}/analyze" method="POST" style="display: inline;">
+    <button type="submit" class="btn btn-cyan">
+      {% if analysis %}↻ Re-analyze{% else %}🔬 Run Analysis{% endif %}
+    </button>
+  </form>
+</div>
+
+<!-- ============================================================
+     RESULT CARD — Primary classification display
+     ============================================================ -->
+{% if classification %}
+  <div class="result-card {{ classification.status_class }}">
+    <div class="result-card-inner">
+      <div class="result-card-image">
+        {% if image %}
+          <img src="/uploads/{{ image.filename }}" alt="Evidence" onclick="openZoomModal('/uploads/{{ image.filename }}')" style="cursor:pointer;">
+        {% else %}
+          <div class="result-card-no-image">📷 No Image</div>
+        {% endif %}
+      </div>
+      <div class="result-card-body">
+        <div class="result-label-badge {{ classification.status_class }}">
+          {% if 'REAL' in classification.label or 'ORIGINAL' in classification.label %}
+            ✅
+          {% elif 'INCONCLUSIVE' in classification.label %}
+            ⚠️
+          {% else %}
+            🚨
+          {% endif %}
+          {{ classification.label }}
+        </div>
+        <div class="result-verdict">{{ classification.verdict }}</div>
+        <div class="result-explanation">{{ classification.explanation }}</div>
+        <div class="result-meta">
+          <span class="result-meta-item">
+            <span class="result-meta-label">Status:</span>
+            <span class="badge badge-{{ claim.status }}">{{ claim.status.replace('_', ' ') }}</span>
+          </span>
+          <span class="result-meta-item">
+            <span class="result-meta-label">Modules Analyzed:</span>
+            {{ modules|length }} of 4
+          </span>
+        </div>
+        <div class="result-actions">
+          <a href="/claims/new" class="btn btn-cyan">+ Analyze Another</a>
+          {% if analysis %}
+            <a href="/claims/{{ claim.id }}/report" class="btn btn-secondary" target="_blank">📄 Full Report</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- ============================================================
+     EVIDENCE TABS — Image comparison viewer
+     ============================================================ -->
+{% if analysis %}
+<div class="evidence-viewer">
+  <div class="evidence-viewer-tabs">
+    <button class="evidence-tab active" data-tab="original">📷 Original</button>
+    {% for mod in modules %}
+      <button class="evidence-tab" data-tab="{{ mod.module_name|lower }}">
+        {% if mod.module_name == 'ELA' %}🔴{% elif mod.module_name == 'PRNU_NOISE' %}📡{% elif mod.module_name == 'JPEG_DCT' %}🔲{% else %}🕐{% endif %}
+        {{ mod.module_name.replace('_', ' ') }}
+      </button>
+    {% endfor %}
+  </div>
+  <div class="evidence-viewer-body">
+    <div class="evidence-pane active" data-pane="original">
+      {% if image %}
+        <div class="evidence-pane-label">Original Evidence Photograph</div>
+        <img class="evidence-pane-image" src="/uploads/{{ image.filename }}" alt="Original" onclick="openZoomModal('/uploads/{{ image.filename }}')" style="cursor:pointer;">
+      {% else %}
+        <div class="evidence-unavailable"><div class="evidence-unavailable-icon">📷</div>No photograph available.</div>
+      {% endif %}
+    </div>
+    {% for mod in modules %}
+    <div class="evidence-pane" data-pane="{{ mod.module_name|lower }}">
+      {% if mod.artifact_path %}
+        <div class="evidence-pane-label">{{ mod.module_name.replace('_', ' ') }} Analysis</div>
+        <img class="evidence-pane-image" src="/{{ mod.artifact_path }}" alt="{{ mod.module_name }}" onclick="openZoomModal('/{{ mod.artifact_path }}')" style="cursor:pointer;">
+        <div class="evidence-pane-desc">{{ mod.details_json or 'No additional details.' }}</div>
+      {% else %}
+        <div class="evidence-unavailable"><div class="evidence-unavailable-icon">📁</div>Artifact unavailable.</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     HOW IT WORKS — Collapsible explanation
+     ============================================================ -->
+{% if analysis %}
+<div class="collapsible-section">
+  <button class="collapsible-trigger">
+    <span>⚙️ How did the system reach this result?</span>
+    <span class="collapsible-arrow">▼</span>
+  </button>
+  <div class="collapsible-content">
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-action">1. Image Preprocessing</div>
+        <div class="timeline-detail">Original image loaded and analyzed ({{ image.width or 'N/A' }}×{{ image.height or 'N/A' }} px).</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot analysis"></div>
+        <div class="timeline-action">2. Error Level Analysis (ELA)</div>
+        <div class="timeline-detail">Image resaved at JPEG quality 90. Per-pixel compression error difference computed to detect localized recompression.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot analysis"></div>
+        <div class="timeline-action">3. Noise / PRNU Analysis</div>
+        <div class="timeline-detail">High-frequency noise residual extracted via Gaussian subtraction. Spatial consistency checked across grid blocks.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot analysis"></div>
+        <div class="timeline-action">4. JPEG Block Analysis</div>
+        <div class="timeline-detail">8×8 DCT block boundary discontinuities measured for grid alignment consistency.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot analysis"></div>
+        <div class="timeline-action">5. Timestamp / Overlay Detection</div>
+        <div class="timeline-detail">Corner regions scanned for high-contrast rectangular overlays using edge detection.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-action">6. Fairness Assessment</div>
+        <div class="timeline-detail">{{ fairness.fairness_notes if fairness and fairness.fairness_notes else 'Device processing characteristics evaluated.' }}</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot review"></div>
+        <div class="timeline-action">7. Classification</div>
+        <div class="timeline-detail">{{ classification.verdict if classification else 'Analysis complete.' }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     FINDINGS — Module-by-module breakdown
+     ============================================================ -->
+{% if analysis and modules %}
+<div class="card">
+  <div class="card-header">
+    <h3>🔍 Module Details</h3>
+  </div>
+  <div class="card-body">
+    <div class="findings-by-module">
+      {% for mod in modules %}
+      <div class="finding-module-card">
+        <div class="finding-module-name">
+          {{ mod.module_name.replace('_', ' ') }}
+          {% if mod.anomaly_detected %}
+            <span class="anomaly-badge">ANOMALY</span>
+          {% else %}
+            <span class="consistent-badge">CONSISTENT</span>
+          {% endif %}
+        </div>
+        <div class="finding-module-text">
+          {{ mod.details_json or 'Module computed localized mathematical variance.' }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     FAIRNESS ASSESSMENT
+     ============================================================ -->
+{% if analysis and fairness %}
+<div class="fairness-card">
+  <div class="fairness-title">
+    <span>⚖️ Fairness Assessment</span>
+  </div>
+  <div class="fairness-grid">
+    <div class="fairness-item">
+      <span class="fairness-label">Device Class</span>
+      <span class="fairness-value">{{ fairness.device_model or 'Unknown' }}</span>
+    </div>
+    <div class="fairness-item">
+      <span class="fairness-label">Baseline Noise</span>
+      <span class="fairness-value">{{ fairness.baseline_noise_level }}</span>
+    </div>
+    <div class="fairness-item">
+      <span class="fairness-label">Observed Noise</span>
+      <span class="fairness-value">{{ fairness.observed_noise_level }}</span>
+    </div>
+    <div class="fairness-item">
+      <span class="fairness-label">Fairness Adjustment</span>
+      <span class="fairness-value highlight">{{ "%.1f"|format(fairness.adjustment_delta) }} pts</span>
+    </div>
+  </div>
+  <div class="fairness-note">
+    {{ fairness.fairness_notes or "Baseline compensation applied to distinguish device processing from localized tampering." }}
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     INVESTIGATION TIMELINE
+     ============================================================ -->
+{% if audit_logs %}
+<div class="card">
+  <div class="card-header">
+    <h3>📋 Investigation Timeline</h3>
+  </div>
+  <div class="card-body">
+    <div class="timeline">
+      {% for log in audit_logs %}
+      <div class="timeline-item">
+        <div class="timeline-dot {% if 'ANALYSIS' in log.action %}analysis{% elif 'REVIEW' in log.action %}review{% else %}audit{% endif %}"></div>
+        <div class="timeline-action">{{ log.action|replace('_', ' ')|title }}</div>
+        {% if log.details %}
+          <div class="timeline-detail">{{ log.details }}</div>
+        {% endif %}
+        <div class="timeline-time">{{ log.created_at.strftime('%b %d, %Y %H:%M UTC') if log.created_at else '' }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     HUMAN REVIEW
+     ============================================================ -->
+<div class="card">
+  <div class="card-header">
+    <h3>👤 Human Review Decision</h3>
+  </div>
+  <div class="card-body">
+    <div class="review-notice">
+      ⚠️ AI analysis is decision support only. Final determination remains with the human claims reviewer.
+    </div>
+
+    {% if existing_review %}
+      <div class="previous-review">
+        <div class="previous-review-title">Previous Review</div>
+        <div class="previous-review-content">
+          Decision: <strong>{{ existing_review.decision|replace('_', ' ')|title }}</strong>
+          {% if existing_review.comments %}
+            <br>Notes: {{ existing_review.comments }}
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <form action="/claims/{{ claim.id }}/review" method="POST">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="decision">Decision *</label>
+          <select id="decision" name="decision" class="form-control" required>
+            <option value="approved" {% if existing_review and existing_review.decision == 'approved' %}selected{% endif %}>✅ Genuine — No suspicious tampering</option>
+            <option value="manual_audit_required" {% if existing_review and existing_review.decision == 'manual_audit_required' %}selected{% endif %}>🔍 Needs Investigation — Inconclusive</option>
+            <option value="flagged_for_investigation" {% if existing_review and existing_review.decision == 'flagged_for_investigation' %}selected{% endif %}>🚨 Suspected Tampering — Flag for Review</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="reviewer_name">Investigator *</label>
+          <input type="text" id="reviewer_name" name="reviewer_name" class="form-control" value="Certified Investigator" required>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="comments">Notes</label>
+          <textarea id="comments" name="comments" class="form-control" rows="3" placeholder="Record observations or notes...">{{ existing_review.comments if existing_review else '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">💾 Record Decision</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

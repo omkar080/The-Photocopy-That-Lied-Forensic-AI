@@ -1,0 +1,105 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Claims Registry — Forensic AI{% endblock %}
+{% block page_title %}Claims Registry{% endblock %}
+{% block page_subtitle %}All uploaded claims and their forensic analysis results{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <input type="text" id="claimsSearch" class="form-control" placeholder="Search claim, claimant, or policy...">
+  <select id="statusFilter" class="form-control">
+    <option value="">All Statuses</option>
+    <option value="submitted">Submitted</option>
+    <option value="in_review">In Review</option>
+    <option value="flagged">Flagged</option>
+    <option value="verified">Verified</option>
+  </select>
+  <select id="resultFilter" class="form-control">
+    <option value="">All Results</option>
+    <option value="real">Original</option>
+    <option value="inconclusive">Inconclusive</option>
+    <option value="fake">Edited</option>
+    <option value="none">Not Analyzed</option>
+  </select>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>📁 All Claims ({{ claims|length }})</h3>
+  </div>
+
+  <div class="table-responsive">
+    <table class="forensic-table claims-filterable">
+      <thead>
+        <tr>
+          <th>Claim #</th>
+          <th>Claimant</th>
+          <th>Type</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Result</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if claims %}
+          {% for item in claims %}
+          {% set result_attr = 'none' %}
+          {% if item.classification %}
+            {% if 'REAL' in item.classification.label or 'ORIGINAL' in item.classification.label %}
+              {% set result_attr = 'real' %}
+            {% elif 'INCONCLUSIVE' in item.classification.label %}
+              {% set result_attr = 'inconclusive' %}
+            {% else %}
+              {% set result_attr = 'fake' %}
+            {% endif %}
+          {% endif %}
+          <tr data-status="{{ item.claim.status }}" data-result="{{ result_attr }}">
+            <td>
+              <a href="/claims/{{ item.claim.id }}" class="claim-code">{{ item.claim.claim_number }}</a>
+            </td>
+            <td style="color: #fff; font-weight: 500;">{{ item.claim.claimant_name }}</td>
+            <td style="font-size: 12px;">{{ item.claim.claim_type }}</td>
+            <td style="white-space: nowrap;">{{ item.claim.created_at.strftime('%b %d, %Y') }}</td>
+            <td>
+              <span class="badge badge-{{ item.claim.status }}">{{ item.claim.status.replace('_', ' ') }}</span>
+            </td>
+            <td>
+              {% if item.classification %}
+                <span class="result-chip {{ item.classification.status_class }}">{{ item.classification.label }}</span>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 11px; font-style: italic;">Not analyzed</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="/claims/{{ item.claim.id }}" class="btn btn-secondary btn-sm">View</a>
+                {% if not item.analysis %}
+                  <form action="/claims/{{ item.claim.id }}/analyze" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-cyan btn-sm">Analyze</button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon">📂</div>
+                <h4>No Claims in Database</h4>
+                <p>Submit your first claim to start forensic analysis.</p>
+                <div style="margin-top: 14px;">
+                  <a href="/claims/new" class="btn btn-primary">+ Submit First Claim</a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} — Forensic AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/forensic.css">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-box">
+        <div class="brand-icon">🔬</div>
+        <div class="brand-text">
+          <h1>Forensic AI</h1>
+          <span>Image Integrity Analysis</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-group-title">Investigation</div>
+        <a href="/" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="/claims/new" class="nav-item {% if active_page == 'new_claim' %}active{% endif %}">
+          <span class="nav-icon">➕</span>
+          <span>New Claim</span>
+        </a>
+        <a href="/claims" class="nav-item {% if active_page == 'claims' %}active{% endif %}">
+          <span class="nav-icon">📁</span>
+          <span>All Claims</span>
+        </a>
+
+        <div class="nav-group-title">Analysis</div>
+        <a href="/evidence" class="nav-item {% if active_page == 'evidence' %}active{% endif %}">
+          <span class="nav-icon">🔍</span>
+          <span>Evidence</span>
+        </a>
+        <a href="/reviews" class="nav-item {% if active_page == 'reviews' %}active{% endif %}">
+          <span class="nav-icon">⚖️</span>
+          <span>Reviews</span>
+        </a>
+        <a href="/health" class="nav-item {% if active_page == 'health' %}active{% endif %}">
+          <span class="nav-icon">🩺</span>
+          <span>System</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="decision-badge">
+          <span>●</span> Decision Support Only
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="mobile-header" id="mobileHeader">
+      <button class="mobile-menu-btn" id="menuToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="mobile-brand">🔬 Forensic AI</div>
+      <a href="/claims/new" class="btn btn-cyan btn-sm">+ New</a>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+          <div class="topbar-subtitle">{% block page_subtitle %}{% endblock %}</div>
+        </div>
+        <div class="topbar-right">
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>Engine Ready</span>
+          </div>
+          <a href="/claims/new" class="btn btn-cyan btn-sm hide-mobile">+ New Claim</a>
+        </div>
+      </header>
+
+      <main class="page-content">
+        {% block content %}{% endblock %}
+
+        <footer class="disclaimer-banner">
+          <strong>⚖ Advisory:</strong> This system provides heuristic forensic indicators for insurance claim imagery. Outputs are decision-support aids and do not constitute proof of tampering. Final determination remains with certified claim specialists.
+          <span class="disclaimer-links"><a href="/health">System</a> · <a href="/docs" target="_blank">API</a></span>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- Zoom Modal -->
+  <div class="modal-overlay" id="zoomModal" onclick="closeZoomModal()">
+    <img id="zoomedImage" src="" alt="Zoomed Image">
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/static/js/forensic.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
