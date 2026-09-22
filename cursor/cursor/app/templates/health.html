@@ -1,0 +1,82 @@
+﻿{% extends "base.html" %}
+
+{% block title %}System Health — Forensic AI{% endblock %}
+{% block page_title %}System Health{% endblock %}
+{% block page_subtitle %}Database connectivity and device baselines{% endblock %}
+
+{% block content %}
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-data">
+      <h3>System Status</h3>
+      <div class="stat-number status-ok">OPERATIONAL</div>
+    </div>
+    <div class="stat-icon-wrapper cyan">🩺</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-data">
+      <h3>Database</h3>
+      <div class="stat-number">{{ db_info.type|upper }}</div>
+    </div>
+    <div class="stat-icon-wrapper blue">🗄️</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-data">
+      <h3>Storage</h3>
+      <div class="stat-number stat-sm">uploads/</div>
+    </div>
+    <div class="stat-icon-wrapper amber">💾</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-data">
+      <h3>Max Upload</h3>
+      <div class="stat-number">{{ max_upload_mb }} MB</div>
+    </div>
+    <div class="stat-icon-wrapper crimson">📦</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>📱 Device Baselines</h3>
+    <a href="/docs" target="_blank" class="btn btn-secondary btn-sm">API Docs ↗</a>
+  </div>
+  <div class="table-responsive">
+    <table class="forensic-table">
+      <thead>
+        <tr>
+          <th>Make</th>
+          <th>Model</th>
+          <th>Sensor</th>
+          <th>Compression</th>
+          <th>Noise Floor</th>
+          <th>PRNU Var.</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if baselines %}
+          {% for b in baselines %}
+          <tr>
+            <td><strong>{{ b.device_make }}</strong></td>
+            <td>{{ b.device_model }}</td>
+            <td>{{ b.sensor_type }}</td>
+            <td>{{ b.typical_compression_quality }}%</td>
+            <td>{{ b.standard_noise_floor }}</td>
+            <td>{{ b.typical_prnu_variance }}</td>
+            <td style="color: var(--text-muted); font-size: 11px;">{{ b.notes }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="empty-state">No device baselines seeded.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

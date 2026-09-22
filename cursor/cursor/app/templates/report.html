@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report — {{ claim.claim_number }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/forensic.css">
+  <style>
+    body { background: #e8e8e8; padding: 20px; }
+    .report-actions { max-width: 800px; margin: 0 auto 12px; display: flex; gap: 10px; }
+    .report-print-btn { padding: 8px 18px; background: #0a0d14; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .report-print-btn:hover { background: #1a2030; }
+  </style>
+</head>
+<body>
+  <div class="report-actions">
+    <button class="report-print-btn" onclick="window.print()">🖨️ Print Report</button>
+    <a href="/claims/{{ claim.id }}" style="padding: 8px 18px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600;">← Back to Analysis</a>
+  </div>
+
+  <div class="report-page">
+    <h1>🔬 Forensic AI — Image Investigation Report</h1>
+
+    <h2>Claim Information</h2>
+    <table>
+      <tr><th>Claim Number</th><td>{{ claim.claim_number }}</td></tr>
+      <tr><th>Policy Number</th><td>{{ claim.policy_number }}</td></tr>
+      <tr><th>Claimant</th><td>{{ claim.claimant_name }}</td></tr>
+      <tr><th>Claim Type</th><td>{{ claim.claim_type }}</td></tr>
+      <tr><th>Incident Date</th><td>{{ claim.incident_date.strftime('%B %d, %Y') if claim.incident_date else 'Not recorded' }}</td></tr>
+      <tr><th>Status</th><td>{{ claim.status|replace('_', ' ')|title }}</td></tr>
+      {% if image %}
+      <tr><th>Image File</th><td>{{ image.original_filename }} ({{ image.width or 'N/A' }}×{{ image.height or 'N/A' }} px)</td></tr>
+      <tr><th>SHA-256</th><td style="font-family: monospace; font-size: 11px; word-break: break-all;">{{ image.sha256_hash }}</td></tr>
+      {% endif %}
+    </table>
+
+    {% if classification %}
+    <h2>Analysis Result</h2>
+    <div style="padding: 16px; border: 2px solid {% if 'REAL' in classification.label or 'ORIGINAL' in classification.label %}#10b981{% elif 'INCONCLUSIVE' in classification.label %}#f59e0b{% else %}#ef4444{% endif %}; border-radius: 8px; margin-bottom: 16px;">
+      <div style="font-size: 18px; font-weight: 700; color: {% if 'REAL' in classification.label or 'ORIGINAL' in classification.label %}#10b981{% elif 'INCONCLUSIVE' in classification.label %}#f59e0b{% else %}#ef4444{% endif %}; margin-bottom: 8px;">
+        {{ classification.label }}
+      </div>
+      <div style="font-size: 13px; color: #333; margin-bottom: 4px;"><strong>{{ classification.verdict }}</strong></div>
+      <div style="font-size: 12px; color: #555;">{{ classification.explanation }}</div>
+    </div>
+    {% endif %}
+
+    {% if analysis %}
+    <h2>Forensic Indicators</h2>
+    <table>
+      <tr><th>Module</th><th>Status</th></tr>
+      {% for mod in modules %}
+      <tr>
+        <td>{{ mod.module_name.replace('_', ' ') }}</td>
+        <td>{{ 'Anomaly Detected' if mod.anomaly_detected else 'Consistent' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <h2>Module Details</h2>
+    {% for mod in modules %}
+    <div style="margin-bottom: 10px;">
+      <strong style="font-size: 12px;">{{ mod.module_name.replace('_', ' ') }}:</strong>
+      <span style="font-size: 11px; color: #555;">{{ mod.details_json or 'No additional details.' }}</span>
+    </div>
+    {% endfor %}
+
+    {% if fairness %}
+    <h2>Fairness Assessment</h2>
+    <table>
+      <tr><th>Device Class</th><td>{{ fairness.device_model or 'Unknown' }}</td></tr>
+      <tr><th>Baseline Noise</th><td>{{ fairness.baseline_noise_level }}</td></tr>
+      <tr><th>Observed Noise</th><td>{{ fairness.observed_noise_level }}</td></tr>
+      <tr><th>Adjustment</th><td>{{ "%.1f"|format(fairness.adjustment_delta) }} pts</td></tr>
+      <tr><th>Explanation</th><td>{{ fairness.fairness_notes or 'Standard optical profile.' }}</td></tr>
+    </table>
+    {% endif %}
+
+    {% endif %}
+
+    <h2>Human Review</h2>
+    {% if existing_review %}
+    <table>
+      <tr><th>Decision</th><td>{{ existing_review.decision|replace('_', ' ')|title }}</td></tr>
+      <tr><th>Reviewer</th><td>Certified Investigator</td></tr>
+      <tr><th>Comments</th><td>{{ existing_review.comments or 'No comments recorded.' }}</td></tr>
+      <tr><th>Date</th><td>{{ existing_review.created_at.strftime('%B %d, %Y %H:%M UTC') if existing_review.created_at else 'N/A' }}</td></tr>
+    </table>
+    {% else %}
+    <p style="font-size: 12px; color: #888;">No human review recorded yet.</p>
+    {% endif %}
+
+    <div class="report-disclaimer">
+      <strong>Disclaimer:</strong> This report is generated by the Forensic AI platform as a decision-support tool.
+      Heuristic forensic indicators do not constitute proof of image manipulation.
+      Final claim determination remains with the authorized human reviewer.
+    </div>
+
+    <div style="margin-top: 12px; font-size: 10px; color: #999; text-align: center;">
+      Generated by Forensic AI v1.0.0 | {{ analysis.completed_at.strftime('%Y-%m-%d %H:%M UTC') if analysis and analysis.completed_at else '' }}
+    </div>
+  </div>
+</body>
+</html>

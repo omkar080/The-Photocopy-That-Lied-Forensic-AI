@@ -1,0 +1,90 @@
+﻿{% extends "base.html" %}
+
+{% block title %}New Claim — Forensic AI{% endblock %}
+{% block page_title %}Submit New Claim{% endblock %}
+{% block page_subtitle %}Upload an insurance damage photograph for forensic analysis{% endblock %}
+
+{% block content %}
+<div class="page-header-actions">
+  <a href="/claims" class="btn btn-secondary">← Back to Claims</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>📝 Claim & Evidence Submission</h3>
+  </div>
+  <div class="card-body">
+    <form action="/claims/create" method="POST" enctype="multipart/form-data" id="claimForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="claim_number">Claim ID *</label>
+          <input type="text" id="claim_number" name="claim_number" class="form-control" value="{{ default_claim_number }}" required>
+        </div>
+
+        <div class="form-group">
+          <label for="policy_number">Policy Number *</label>
+          <input type="text" id="policy_number" name="policy_number" class="form-control" placeholder="e.g. POL-2026-883" required>
+        </div>
+
+        <div class="form-group">
+          <label for="claimant_name">Claimant Name *</label>
+          <input type="text" id="claimant_name" name="claimant_name" class="form-control" placeholder="Full name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="claim_type">Claim Category *</label>
+          <select id="claim_type" name="claim_type" class="form-control">
+            <option value="Crop Loss - Hail Damage">Crop Loss — Hail Damage</option>
+            <option value="Crop Loss - Drought/Heat Stress">Crop Loss — Drought/Heat</option>
+            <option value="Crop Loss - Flood/Submersion">Crop Loss — Flood</option>
+            <option value="Crop Loss - Pest Infiltration">Crop Loss — Pest</option>
+            <option value="Farm Equipment / Structure Damage">Equipment/Structure</option>
+            <option value="Auto / Vehicle Damage">Auto / Vehicle</option>
+            <option value="General Property Damage">Property Damage</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="incident_date">Incident Date</label>
+          <input type="date" id="incident_date" name="incident_date" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="location">Location</label>
+          <input type="text" id="location" name="location" class="form-control" placeholder="e.g. Anand, Gujarat">
+        </div>
+
+        <div class="form-group full-width">
+          <label for="notes">Description</label>
+          <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Describe the loss condition or claim context..."></textarea>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="form-group full-width">
+          <label>Evidence Photograph *</label>
+          <div class="dropzone" id="claimDropzone">
+            <div class="dropzone-content">
+              <div class="dropzone-icon">📷</div>
+              <div class="dropzone-title">Click to upload or drag & drop</div>
+              <div class="dropzone-subtitle">JPEG or PNG — up to 25 MB</div>
+            </div>
+          </div>
+          <input type="file" id="imageFileInput" name="image_file" accept="image/jpeg,image/png,image/jpg" style="display: none;" required>
+
+          <div class="preview-container" id="imagePreview">
+            <img id="previewImg" src="" alt="Preview">
+            <div id="fileMeta" class="file-meta"></div>
+            <button type="button" class="btn-remove-image" id="removeImage" title="Remove image">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="/claims" class="btn btn-secondary">Cancel</a>
+        <button type="submit" name="action" value="save_only" class="btn btn-secondary">Save Only</button>
+        <button type="submit" name="action" value="analyze_now" class="btn btn-cyan">🔬 Submit &amp; Analyze</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
